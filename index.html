@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PromptBox - AI Prompt Generator & Copy-Paste Hub</title>
+  <meta name="description" content="Discover, customize, and copy high-performing AI prompts for ChatGPT, Midjourney, AutoDraft, Claude, Runway, and more." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b5cf6' stroke-width='2'><path d='M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z'/><path d='m3.3 7 8.7 5 8.7-5'/><path d='M12 22V12'/></svg>" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Supabase JS Client via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="bg-[#080c14] text-slate-100 min-h-screen relative selection:bg-violet-600 selection:text-white">
+
+  <!-- Ambient Glowing Orbs -->
+  <div class="ambient-glow-1"></div>
+  <div class="ambient-glow-2"></div>
+  <div class="ambient-glow-3"></div>
+
+  <!-- Header / Navigation -->
+  <header class="sticky top-0 z-40 w-full backdrop-blur-xl bg-[#080c14]/85 border-b border-white/5 transition-all">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-3">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3 cursor-pointer" id="nav-brand-logo">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/30 ring-1 ring-white/20">
+          <i data-lucide="box" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-violet-300 bg-clip-text text-transparent">
+              PromptBox
+            </span>
+            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">
+              Pro Hub
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-400 font-medium hidden sm:block">AI Prompt Generator & Copy-Paste Hub</p>
+        </div>
+      </div>
+
+      <!-- Navigation & Action Buttons -->
+      <div class="flex items-center gap-2 sm:gap-2.5">
+        
+        <!-- View Mode Switcher: Hub vs Admin -->
+        <div class="flex items-center p-1 rounded-xl bg-slate-900/80 border border-white/10 text-xs">
+          <button 
+            id="nav-tab-hub" 
+            type="button" 
+            class="px-2.5 sm:px-3 py-1.5 rounded-lg font-semibold bg-violet-600 text-white shadow-sm transition-all flex items-center gap-1.5"
+            title="Explore Prompts Hub"
+          >
+            <i data-lucide="compass" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Explore</span>
+          </button>
+          <button 
+            id="nav-tab-admin" 
+            type="button" 
+            class="px-2.5 sm:px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-white transition-all flex items-center gap-1.5"
+            title="Admin Dashboard & Analytics"
+          >
+            <i data-lucide="shield" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span>Admin</span>
+            <span class="text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 font-mono hidden md:inline">Panel</span>
+          </button>
+        </div>
+
+        <!-- Favorites Quick Filter (in Hub) -->
+        <button 
+          id="fav-filter-btn" 
+          type="button"
+          class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-white/10 transition-all hover:border-pink-500/40"
+          title="Filter saved favorite prompts"
+        >
+          <i data-lucide="bookmark" class="w-3.5 h-3.5 text-pink-400"></i>
+          <span class="hidden md:inline">Favorites</span>
+          <span id="fav-filter-count" class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-300">0</span>
+        </button>
+
+        <!-- Prompt Generator Studio Button -->
+        <button 
+          id="btn-open-generator"
+          type="button" 
+          class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 text-violet-300 border border-violet-500/30 transition-all shadow-sm hover:shadow-violet-500/20"
+        >
+          <i data-lucide="wand-2" class="w-3.5 h-3.5 text-violet-400"></i>
+          <span class="hidden md:inline">AI Studio</span>
+        </button>
+
+        <!-- Submit Prompt Button -->
+        <button 
+          id="btn-open-submit-modal"
+          type="button" 
+          class="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-lg shadow-violet-600/30 active:scale-95 transition-all"
+        >
+          <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">Submit Prompt</span>
+          <span class="sm:hidden">Submit</span>
+        </button>
+
+        <!-- Supabase Auth Section -->
+        <div id="auth-header-container" class="flex items-center gap-2">
+          <!-- Logged Out Button -->
+          <button 
+            id="btn-open-auth-modal" 
+            type="button" 
+            class="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-900 border border-white/15 hover:border-emerald-500/40 text-slate-200 hover:text-white transition-all shadow-sm"
+          >
+            <i data-lucide="log-in" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span>Sign In</span>
+          </button>
+
+          <!-- Logged In User Profile (Hidden by default) -->
+          <div id="auth-user-profile" class="hidden flex items-center gap-2 pl-1">
+            <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-900/90 border border-white/10 text-xs">
+              <div id="auth-user-avatar" class="w-6 h-6 rounded-full bg-gradient-to-tr from-emerald-500 to-cyan-500 text-white font-bold text-[11px] flex items-center justify-center shrink-0">
+                U
+              </div>
+              <div class="flex flex-col text-left">
+                <span id="auth-user-name" class="font-semibold text-slate-200 text-[11px] max-w-[100px] truncate">user</span>
+                <span id="auth-user-role-badge" class="text-[9px] px-1 py-0.2 rounded font-medium auth-user-badge">User</span>
+              </div>
+            </div>
+            <button 
+              id="btn-auth-logout" 
+              type="button" 
+              class="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-red-400 border border-white/10 transition-colors"
+              title="Sign Out"
+            >
+              <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= EXPLORE HUB VIEW ================= -->
+  <div id="hub-explore-view">
+
+  <!-- Hero Section -->
+  <section class="relative pt-12 pb-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center z-10">
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-violet-950/60 border border-violet-500/30 text-violet-300 text-xs font-semibold mb-6 shadow-inner backdrop-blur-md">
+      <span class="w-2 h-2 rounded-full bg-violet-400 animate-ping"></span>
+      Instant Copy & Customized Variables Engine
+    </div>
+
+    <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white max-w-4xl mx-auto leading-tight sm:leading-none mb-4">
+      Supercharge Your AI Workflow with <span class="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">PromptBox</span>
+    </h1>
+
+    <p class="text-slate-400 text-sm sm:text-lg max-w-2xl mx-auto mb-8 font-normal leading-relaxed">
+      Curated, battle-tested prompt templates for ChatGPT, Midjourney, AutoDraft, Claude & Sora. Fill dynamic placeholders and copy in a click.
+    </p>
+
+    <!-- Master Search Bar -->
+    <div class="max-w-3xl mx-auto relative group">
+      <div class="absolute -inset-1 bg-gradient-to-r from-violet-600 to-cyan-500 rounded-2xl blur opacity-25 group-hover:opacity-60 transition duration-500"></div>
+      
+      <div class="relative flex items-center bg-[#111726]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-2 sm:p-2.5 shadow-2xl">
+        <div class="pl-3 pr-2 text-slate-400 flex items-center pointer-events-none">
+          <i data-lucide="search" class="w-5 h-5 text-violet-400"></i>
+        </div>
+
+        <input 
+          id="search-input"
+          type="text" 
+          placeholder="Search prompts by keyword, target tool, style, or tag... (Press '/' to focus)"
+          class="w-full bg-transparent border-0 text-white placeholder-slate-500 text-sm sm:text-base focus:ring-0 focus:outline-none px-2"
+          autocomplete="off"
+        />
+
+        <button 
+          id="clear-search-btn"
+          type="button" 
+          class="hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 mr-2 transition-colors"
+          title="Clear search"
+        >
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+
+        <div class="hidden sm:flex items-center gap-1.5 pr-2">
+          <kbd class="px-2 py-1 text-[11px] font-semibold text-slate-400 bg-slate-800/90 border border-slate-700 rounded-lg shadow-sm font-mono">Ctrl+K</kbd>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content & Filters Area -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 relative z-10">
+
+    <!-- Categories Pills Bar -->
+    <div class="mb-6 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none" id="category-pills-container">
+      <!-- Injected dynamically via JS -->
+    </div>
+
+    <!-- Secondary Filter & Controls Bar -->
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6 p-4 rounded-2xl bg-slate-900/40 border border-white/5 backdrop-blur-md">
+      
+      <!-- Counter & Active Filters Display -->
+      <div class="flex items-center gap-2">
+        <div class="w-2 h-2 rounded-full bg-violet-400"></div>
+        <span id="filtered-count-display" class="text-xs font-semibold text-slate-300">
+          Showing 82 prompts
+        </span>
+      </div>
+
+      <!-- Tool & Sort Controls -->
+      <div class="flex items-center gap-3 flex-wrap">
+        
+        <!-- Target AI Tool Filter -->
+        <div class="flex items-center gap-2 bg-slate-900/80 border border-white/10 rounded-xl px-3 py-1.5 text-xs">
+          <span class="text-slate-400 font-medium">Tool:</span>
+          <select id="tool-select" class="bg-transparent text-slate-200 font-semibold focus:outline-none cursor-pointer">
+            <option value="All" class="bg-slate-900 text-white">All Tools</option>
+            <option value="ChatGPT" class="bg-slate-900 text-white">ChatGPT</option>
+            <option value="Midjourney" class="bg-slate-900 text-white">Midjourney</option>
+            <option value="AutoDraft" class="bg-slate-900 text-white">AutoDraft</option>
+            <option value="Claude" class="bg-slate-900 text-white">Claude</option>
+            <option value="Runway" class="bg-slate-900 text-white">Runway / Sora</option>
+          </select>
+        </div>
+
+        <!-- Sort Select -->
+        <div class="flex items-center gap-2 bg-slate-900/80 border border-white/10 rounded-xl px-3 py-1.5 text-xs">
+          <span class="text-slate-400 font-medium">Sort:</span>
+          <select id="sort-select" class="bg-transparent text-slate-200 font-semibold focus:outline-none cursor-pointer">
+            <option value="popular" class="bg-slate-900 text-white">Most Popular</option>
+            <option value="newest" class="bg-slate-900 text-white">Newest First</option>
+            <option value="az" class="bg-slate-900 text-white">Title (A - Z)</option>
+          </select>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Prompts Grid -->
+    <div id="prompts-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Rendered dynamically by JavaScript -->
+    </div>
+
+    <!-- Empty State -->
+    <div id="empty-state" class="hidden text-center py-20 px-4 glass-panel rounded-3xl border border-white/5 my-8">
+      <div class="w-16 h-16 rounded-2xl bg-slate-800/80 text-violet-400 flex items-center justify-center mx-auto mb-4 border border-violet-500/20">
+        <i data-lucide="search-x" class="w-8 h-8"></i>
+      </div>
+      <h3 class="text-lg font-bold text-white mb-2">No matching prompts found</h3>
+      <p class="text-slate-400 text-xs sm:text-sm max-w-md mx-auto mb-6">
+        We couldn't find any prompts matching your current keyword or filters. Try adjusting your search query or submit your own!
+      </p>
+      <button 
+        id="hero-submit-btn"
+        type="button"
+        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-violet-600 hover:bg-violet-500 text-white transition-all shadow-lg shadow-violet-600/30"
+      >
+        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+        <span>Create New Prompt</span>
+      </button>
+    </div>
+
+    <!-- SEO FAQ Section -->
+    <section 
+      id="faq-section" 
+      class="mt-20 pt-12 border-t border-white/5" 
+      itemscope 
+      itemtype="https://schema.org/FAQPage"
+    >
+      <div class="text-center max-w-3xl mx-auto mb-10">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-950/50 border border-violet-500/20 text-violet-300 text-xs font-semibold mb-3">
+          <i data-lucide="help-circle" class="w-3.5 h-3.5 text-violet-400"></i>
+          Frequently Asked Questions
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          Everything You Need to Know About PromptBox
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-400 mt-2">
+          Explore how our curated AI prompt library, live variable replacer, and direct AI integrations work.
+        </p>
+      </div>
+
+      <div class="max-w-4xl mx-auto space-y-4">
+        
+        <!-- FAQ 1 -->
+        <details 
+          class="faq-item glass-panel rounded-2xl p-5 border border-white/5 cursor-pointer group"
+          itemscope 
+          itemprop="mainEntity" 
+          itemtype="https://schema.org/Question"
+        >
+          <summary class="flex items-center justify-between gap-4 font-semibold text-white text-sm sm:text-base list-none select-none">
+            <span itemprop="name" class="flex items-center gap-2.5">
+              <i data-lucide="sparkles" class="w-4 h-4 text-violet-400 shrink-0"></i>
+              What is PromptBox and how does it help creators & developers?
+            </span>
+            <div class="faq-icon p-1 rounded-lg bg-slate-800 text-slate-400 group-hover:text-white transition-transform duration-200 shrink-0">
+              <i data-lucide="chevron-down" class="w-4 h-4"></i>
+            </div>
+          </summary>
+          <div 
+            class="mt-3.5 pt-3.5 border-t border-white/5 text-xs sm:text-sm text-slate-300 leading-relaxed font-normal"
+            itemscope 
+            itemprop="acceptedAnswer" 
+            itemtype="https://schema.org/Answer"
+          >
+            <p itemprop="text">
+              PromptBox is a modern, curated AI prompt generator and copy-paste hub containing over 80 production-tested prompts across YouTube thumbnails, 2D village animations, Midjourney character art, Hindi moral stories, web development, and social media growth. It eliminates trial-and-error by providing structured prompt engineering templates ready for immediate production use.
+            </p>
+          </div>
+        </details>
+
+        <!-- FAQ 2 -->
+        <details 
+          class="faq-item glass-panel rounded-2xl p-5 border border-white/5 cursor-pointer group"
+          itemscope 
+          itemprop="mainEntity" 
+          itemtype="https://schema.org/Question"
+        >
+          <summary class="flex items-center justify-between gap-4 font-semibold text-white text-sm sm:text-base list-none select-none">
+            <span itemprop="name" class="flex items-center gap-2.5">
+              <i data-lucide="sliders" class="w-4 h-4 text-violet-400 shrink-0"></i>
+              How do the dynamic variable replacement fields work on prompt cards?
+            </span>
+            <div class="faq-icon p-1 rounded-lg bg-slate-800 text-slate-400 group-hover:text-white transition-transform duration-200 shrink-0">
+              <i data-lucide="chevron-down" class="w-4 h-4"></i>
+            </div>
+          </summary>
+          <div 
+            class="mt-3.5 pt-3.5 border-t border-white/5 text-xs sm:text-sm text-slate-300 leading-relaxed font-normal"
+            itemscope 
+            itemprop="acceptedAnswer" 
+            itemtype="https://schema.org/Answer"
+          >
+            <p itemprop="text">
+              Each prompt template features customizable placeholder brackets such as <code class="px-1.5 py-0.5 rounded bg-violet-950/60 text-violet-300 font-mono text-xs">[Topic]</code>, <code class="px-1.5 py-0.5 rounded bg-violet-950/60 text-violet-300 font-mono text-xs">[Style]</code>, or <code class="px-1.5 py-0.5 rounded bg-violet-950/60 text-violet-300 font-mono text-xs">[Character]</code>. You can edit these values directly in the input fields on the card or in the modal. As you type, the prompt text updates in real-time, and copying or launching will automatically use your customized values.
+            </p>
+          </div>
+        </details>
+
+        <!-- FAQ 3 -->
+        <details 
+          class="faq-item glass-panel rounded-2xl p-5 border border-white/5 cursor-pointer group"
+          itemscope 
+          itemprop="mainEntity" 
+          itemtype="https://schema.org/Question"
+        >
+          <summary class="flex items-center justify-between gap-4 font-semibold text-white text-sm sm:text-base list-none select-none">
+            <span itemprop="name" class="flex items-center gap-2.5">
+              <i data-lucide="bot" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+              What does the direct "Try in ChatGPT" button do?
+            </span>
+            <div class="faq-icon p-1 rounded-lg bg-slate-800 text-slate-400 group-hover:text-white transition-transform duration-200 shrink-0">
+              <i data-lucide="chevron-down" class="w-4 h-4"></i>
+            </div>
+          </summary>
+          <div 
+            class="mt-3.5 pt-3.5 border-t border-white/5 text-xs sm:text-sm text-slate-300 leading-relaxed font-normal"
+            itemscope 
+            itemprop="acceptedAnswer" 
+            itemtype="https://schema.org/Answer"
+          >
+            <p itemprop="text">
+              Clicking <strong>"Try in ChatGPT"</strong> automatically copies your customized prompt to your system clipboard and opens ChatGPT in a new tab with your prompt pre-filled in the prompt bar, enabling you to generate results with zero extra clicks.
+            </p>
+          </div>
+        </details>
+
+        <!-- FAQ 4 -->
+        <details 
+          class="faq-item glass-panel rounded-2xl p-5 border border-white/5 cursor-pointer group"
+          itemscope 
+          itemprop="mainEntity" 
+          itemtype="https://schema.org/Question"
+        >
+          <summary class="flex items-center justify-between gap-4 font-semibold text-white text-sm sm:text-base list-none select-none">
+            <span itemprop="name" class="flex items-center gap-2.5">
+              <i data-lucide="cpu" class="w-4 h-4 text-cyan-400 shrink-0"></i>
+              Which AI models and platforms are supported?
+            </span>
+            <div class="faq-icon p-1 rounded-lg bg-slate-800 text-slate-400 group-hover:text-white transition-transform duration-200 shrink-0">
+              <i data-lucide="chevron-down" class="w-4 h-4"></i>
+            </div>
+          </summary>
+          <div 
+            class="mt-3.5 pt-3.5 border-t border-white/5 text-xs sm:text-sm text-slate-300 leading-relaxed font-normal"
+            itemscope 
+            itemprop="acceptedAnswer" 
+            itemtype="https://schema.org/Answer"
+          >
+            <p itemprop="text">
+              PromptBox offers specialized prompts calibrated for OpenAI ChatGPT (GPT-4o), Midjourney v6 and Niji 6, Anthropic Claude 3.5 Sonnet, AutoDraft AI, Runway Gen-3 Alpha, Sora, and DALL-E 3. You can filter the library by your preferred tool using the Tool dropdown filter.
+            </p>
+          </div>
+        </details>
+
+        <!-- FAQ 5 -->
+        <details 
+          class="faq-item glass-panel rounded-2xl p-5 border border-white/5 cursor-pointer group"
+          itemscope 
+          itemprop="mainEntity" 
+          itemtype="https://schema.org/Question"
+        >
+          <summary class="flex items-center justify-between gap-4 font-semibold text-white text-sm sm:text-base list-none select-none">
+            <span itemprop="name" class="flex items-center gap-2.5">
+              <i data-lucide="plus-circle" class="w-4 h-4 text-pink-400 shrink-0"></i>
+              Can I save custom prompts or submit my own templates?
+            </span>
+            <div class="faq-icon p-1 rounded-lg bg-slate-800 text-slate-400 group-hover:text-white transition-transform duration-200 shrink-0">
+              <i data-lucide="chevron-down" class="w-4 h-4"></i>
+            </div>
+          </summary>
+          <div 
+            class="mt-3.5 pt-3.5 border-t border-white/5 text-xs sm:text-sm text-slate-300 leading-relaxed font-normal"
+            itemscope 
+            itemprop="acceptedAnswer" 
+            itemtype="https://schema.org/Answer"
+          >
+            <p itemprop="text">
+              Yes! Click the <strong>"+ Submit Prompt"</strong> button in the navigation header to add your own prompts with custom categories, target AI tools, bracketed variables, and pro tips. All submitted prompts and favorite bookmarks are automatically saved to your local browser storage (<code class="text-violet-300 font-mono text-xs">localStorage</code>) and persist across refreshes.
+            </p>
+          </div>
+        </details>
+
+        <!-- FAQ 6 -->
+        <details 
+          class="faq-item glass-panel rounded-2xl p-5 border border-white/5 cursor-pointer group"
+          itemscope 
+          itemprop="mainEntity" 
+          itemtype="https://schema.org/Question"
+        >
+          <summary class="flex items-center justify-between gap-4 font-semibold text-white text-sm sm:text-base list-none select-none">
+            <span itemprop="name" class="flex items-center gap-2.5">
+              <i data-lucide="shield-check" class="w-4 h-4 text-amber-400 shrink-0"></i>
+              Are the prompts free to use for commercial and client projects?
+            </span>
+            <div class="faq-icon p-1 rounded-lg bg-slate-800 text-slate-400 group-hover:text-white transition-transform duration-200 shrink-0">
+              <i data-lucide="chevron-down" class="w-4 h-4"></i>
+            </div>
+          </summary>
+          <div 
+            class="mt-3.5 pt-3.5 border-t border-white/5 text-xs sm:text-sm text-slate-300 leading-relaxed font-normal"
+            itemscope 
+            itemprop="acceptedAnswer" 
+            itemtype="https://schema.org/Answer"
+          >
+            <p itemprop="text">
+              All prompts in PromptBox are 100% royalty-free and open for personal, commercial, and client work. You are free to generate YouTube videos, client codebases, game assets, marketing campaigns, and published articles using these prompts.
+            </p>
+          </div>
+        </details>
+
+      </div>
+    </section>
+
+  </main>
+  </div>
+  <!-- ================= /EXPLORE HUB VIEW ================= -->
+
+  <!-- ================= ADMIN DASHBOARD PANEL ================= -->
+  <div id="admin-dashboard-view" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10 animate-fade-in-scale">
+    
+    <!-- Admin Top Banner -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 p-6 rounded-3xl glass-panel border border-amber-500/20 bg-gradient-to-r from-amber-950/20 via-slate-900/60 to-violet-950/20">
+      <div class="flex items-start sm:items-center gap-3.5">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/20 shrink-0">
+          <i data-lucide="shield" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2.5">
+            <h1 class="text-xl sm:text-2xl font-black text-white">PromptBox Admin & Analytics</h1>
+            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              Live Console
+            </span>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1">
+            Manage prompt templates, review community submissions, monitor copy velocity, and configure permissions.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2.5 flex-wrap">
+        <button 
+          id="btn-admin-back-hub" 
+          type="button" 
+          class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 transition-all flex items-center gap-1.5"
+        >
+          <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          <span>Back to Hub</span>
+        </button>
+
+        <button 
+          id="btn-admin-add-prompt" 
+          type="button" 
+          class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-600/30 transition-all flex items-center gap-1.5 active:scale-95"
+        >
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>New Prompt</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 4 Key Analytics Overview Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+      
+      <!-- Metric 1: Total Prompts -->
+      <div class="glass-panel metric-card-glow rounded-2xl p-5 border border-white/10 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-400 mb-2">
+          <span class="text-xs font-semibold uppercase tracking-wider">Total Prompts</span>
+          <div class="p-2 rounded-xl bg-violet-500/10 text-violet-400">
+            <i data-lucide="layers" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span id="admin-stat-total-prompts" class="text-2xl sm:text-3xl font-black text-white">82</span>
+          <span class="text-xs text-emerald-400 font-semibold">+100% catalog</span>
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex items-center justify-between border-t border-white/5 pt-2">
+          <span>Active in directory</span>
+          <span id="admin-stat-official-count" class="font-mono text-slate-300">82 seeds</span>
+        </div>
+      </div>
+
+      <!-- Metric 2: Total Copies -->
+      <div class="glass-panel metric-card-glow rounded-2xl p-5 border border-white/10 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-400 mb-2">
+          <span class="text-xs font-semibold uppercase tracking-wider">Total Copies</span>
+          <div class="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
+            <i data-lucide="copy" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span id="admin-stat-total-copies" class="text-2xl sm:text-3xl font-black text-white">0</span>
+          <span class="text-xs text-emerald-400 font-semibold">Usage velocity</span>
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex items-center justify-between border-t border-white/5 pt-2">
+          <span>Clipboard actions</span>
+          <span class="font-mono text-slate-300">Live tracker</span>
+        </div>
+      </div>
+
+      <!-- Metric 3: Total Favorites -->
+      <div class="glass-panel metric-card-glow rounded-2xl p-5 border border-white/10 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-400 mb-2">
+          <span class="text-xs font-semibold uppercase tracking-wider">Total Bookmarks</span>
+          <div class="p-2 rounded-xl bg-pink-500/10 text-pink-400">
+            <i data-lucide="heart" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span id="admin-stat-total-favs" class="text-2xl sm:text-3xl font-black text-white">0</span>
+          <span class="text-xs text-pink-400 font-semibold">User saves</span>
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex items-center justify-between border-t border-white/5 pt-2">
+          <span>Starred by users</span>
+          <span class="font-mono text-slate-300">Community love</span>
+        </div>
+      </div>
+
+      <!-- Metric 4: Community Submissions -->
+      <div class="glass-panel metric-card-glow rounded-2xl p-5 border border-white/10 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-400 mb-2">
+          <span class="text-xs font-semibold uppercase tracking-wider">Community Prompts</span>
+          <div class="p-2 rounded-xl bg-amber-500/10 text-amber-400">
+            <i data-lucide="users" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span id="admin-stat-community-count" class="text-2xl sm:text-3xl font-black text-white">0</span>
+          <span class="text-xs text-amber-400 font-semibold">User created</span>
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex items-center justify-between border-t border-white/5 pt-2">
+          <span>Local storage synced</span>
+          <span class="font-mono text-slate-300">Instant approval</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Analytics Breakdown: Category Distribution & Top 5 Leaderboard -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      
+      <!-- Category Distribution -->
+      <div class="glass-panel rounded-2xl p-6 border border-white/10">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <i data-lucide="pie-chart" class="w-4 h-4 text-violet-400"></i>
+            Category Distribution
+          </h3>
+          <span class="text-xs text-slate-400">Prompts by Niche</span>
+        </div>
+        <div id="admin-category-bars" class="space-y-3.5">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+
+      <!-- Top 5 Most Copied Prompts Leaderboard -->
+      <div class="glass-panel rounded-2xl p-6 border border-white/10">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>
+            Top 5 Most Copied Prompts
+          </h3>
+          <span class="text-xs text-slate-400">Highest Engagement</span>
+        </div>
+        <div id="admin-top-prompts-list" class="space-y-2.5">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Prompt Management Table Section -->
+    <div class="glass-panel rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
+      
+      <!-- Table Filter Bar -->
+      <div class="p-5 border-b border-white/10 bg-slate-900/60 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+            <span>All Prompts Management</span>
+            <span id="admin-table-count" class="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">82</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Edit, delete, pin, or approve prompt templates in real-time.</p>
+        </div>
+
+        <div class="flex items-center gap-3 flex-wrap">
+          <!-- Admin Table Search -->
+          <div class="relative">
+            <input 
+              id="admin-table-search" 
+              type="text" 
+              placeholder="Search prompts..." 
+              class="bg-slate-900 border border-slate-700/80 rounded-xl px-3 pl-8 py-1.5 text-xs text-white placeholder-slate-500 focus:border-violet-500 outline-none w-48 sm:w-60"
+            />
+            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5"></i>
+          </div>
+
+          <!-- Category Filter in Admin -->
+          <select id="admin-category-filter" class="bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs text-slate-300 outline-none cursor-pointer">
+            <option value="All">All Categories</option>
+            <option value="Animation & Visuals">Animation & Visuals</option>
+            <option value="YouTube & Video">YouTube & Video</option>
+            <option value="Web Dev & Coding">Web Dev & Coding</option>
+            <option value="Social Media">Social Media</option>
+            <option value="Stories & Scripts">Stories & Scripts</option>
+          </select>
+
+          <!-- Origin Filter in Admin -->
+          <select id="admin-origin-filter" class="bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs text-slate-300 outline-none cursor-pointer">
+            <option value="All">All Origins</option>
+            <option value="community">Community Submitted</option>
+            <option value="official">Official Seeds</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Table View -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-950/70 text-slate-400 uppercase tracking-wider text-[10px] border-b border-white/5">
+            <tr>
+              <th class="py-3 px-4 font-semibold">Title & Preview</th>
+              <th class="py-3 px-4 font-semibold">Category / Tool</th>
+              <th class="py-3 px-4 font-semibold text-center">Copies</th>
+              <th class="py-3 px-4 font-semibold">Origin</th>
+              <th class="py-3 px-4 font-semibold">Status</th>
+              <th class="py-3 px-4 font-semibold text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="admin-prompts-tbody" class="divide-y divide-white/5 text-slate-300">
+            <!-- Injected dynamically via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State for Admin Table -->
+      <div id="admin-table-empty" class="hidden text-center py-12 text-slate-400 text-xs">
+        <i data-lucide="inbox" class="w-8 h-8 text-slate-500 mx-auto mb-2"></i>
+        <p>No prompts matching current admin filter criteria.</p>
+      </div>
+
+    </div>
+
+  </div>
+  <!-- ================= /ADMIN DASHBOARD PANEL ================= -->
+
+  <!-- Footer -->
+  <footer class="border-t border-white/5 bg-[#05080f] py-10 px-4 relative z-10 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 rounded-lg bg-violet-600/40 flex items-center justify-center text-violet-300">
+          <i data-lucide="box" class="w-3.5 h-3.5"></i>
+        </div>
+        <span class="font-bold text-slate-300">PromptBox</span>
+        <span>• Curated AI Prompt Directory</span>
+      </div>
+      <div class="flex items-center gap-4 text-slate-400">
+        <span>Press <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-[10px] text-slate-300 border border-slate-700 font-mono">/</kbd> to search</span>
+        <span>•</span>
+        <span>Click card to customize variables</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- Modal 1: View & Live Variable Customizer Modal -->
+  <div id="detail-modal" class="modal-container fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div class="modal-backdrop fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity"></div>
+    
+    <div class="glass-panel w-full max-w-3xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden relative z-10 animate-fade-in-scale max-h-[92vh] flex flex-col">
+      
+      <!-- Modal Header -->
+      <div class="p-6 border-b border-white/10 flex items-start justify-between gap-4 bg-slate-900/60">
+        <div>
+          <div class="flex items-center gap-2 mb-2">
+            <span id="modal-category-badge" class="text-xs font-semibold px-3 py-1 rounded-full border">
+              Category
+            </span>
+            <span id="modal-tool-badge" class="text-xs font-medium px-2.5 py-0.5 rounded-md">
+              AI Tool
+            </span>
+          </div>
+          <h2 id="modal-prompt-title" class="text-xl sm:text-2xl font-black text-white leading-tight">
+            Prompt Title
+          </h2>
+        </div>
+        
+        <button 
+          data-close-modal 
+          class="p-2 rounded-xl bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+          title="Close modal"
+        >
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div class="p-6 overflow-y-auto space-y-6 flex-1 text-slate-200">
+        
+        <!-- Live Variable Form Section (Dynamic) -->
+        <div id="modal-variables-section" class="hidden p-4 rounded-2xl bg-violet-950/20 border border-violet-500/20">
+          <div class="flex items-center gap-2 mb-3">
+            <i data-lucide="sliders" class="w-4 h-4 text-violet-400"></i>
+            <h4 class="text-xs font-bold uppercase tracking-wider text-violet-300">
+              Customize Prompt Placeholders (Live Fill-in)
+            </h4>
+          </div>
+          <p class="text-xs text-slate-400 mb-4">
+            Type values below to instantly replace the highlighted variables in the prompt:
+          </p>
+          <div id="modal-variables-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- Injected dynamically -->
+          </div>
+        </div>
+
+        <!-- Rendered Prompt Preview Box -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <i data-lucide="terminal" class="w-3.5 h-3.5 text-violet-400"></i>
+              Prompt Text
+            </label>
+            <span id="modal-char-count" class="text-[11px] text-slate-500 font-mono">0 chars</span>
+          </div>
+          
+          <div class="relative group">
+            <div 
+              id="modal-prompt-preview" 
+              class="w-full bg-[#0b101c] border border-white/10 rounded-2xl p-4 text-xs sm:text-sm font-mono text-slate-200 leading-relaxed max-h-72 overflow-y-auto whitespace-pre-wrap select-text"
+            >
+              <!-- Filled via JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Pro Tips Box -->
+        <div class="p-4 rounded-2xl bg-slate-900/60 border border-white/5 flex items-start gap-3">
+          <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400 shrink-0">
+            <i data-lucide="lightbulb" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h5 class="text-xs font-bold text-amber-300 mb-1">Recommendation & Optimal Settings</h5>
+            <p id="modal-prompt-tips" class="text-xs text-slate-400 leading-relaxed">
+              Tips content goes here.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-6 border-t border-white/10 bg-slate-900/60 flex items-center justify-between gap-3 flex-wrap">
+        <a 
+          id="modal-launch-tool-btn"
+          href="https://chatgpt.com" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors border border-white/5"
+        >
+          <span>Open in AI Tool</span>
+          <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+        </a>
+
+        <div class="flex items-center gap-3">
+          <button 
+            data-close-modal 
+            type="button" 
+            class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-400 hover:text-white transition-colors"
+          >
+            Close
+          </button>
+          
+          <button 
+            id="modal-copy-btn" 
+            type="button" 
+            class="flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-violet-600 hover:bg-violet-500 active:scale-95 text-white transition-all shadow-lg shadow-violet-600/30"
+          >
+            <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+            <span>Copy Prompt</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal 2: Submit New Prompt Modal -->
+  <div id="submit-modal" class="modal-container fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div class="modal-backdrop fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity"></div>
+    
+    <div class="glass-panel w-full max-w-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden relative z-10 animate-fade-in-scale max-h-[92vh] flex flex-col">
+      
+      <!-- Header -->
+      <div class="p-6 border-b border-white/10 flex items-center justify-between bg-slate-900/60">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-300">
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h2 class="text-lg sm:text-xl font-bold text-white">Submit New Prompt</h2>
+            <p class="text-xs text-slate-400">Contribute your tested AI prompt template to PromptBox</p>
+          </div>
+        </div>
+        <button data-close-modal class="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Form -->
+      <form id="submit-prompt-form" class="p-6 overflow-y-auto space-y-4 flex-1">
+        
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">Prompt Title *</label>
+          <input 
+            type="text" 
+            id="new-prompt-title" 
+            required 
+            placeholder="e.g., Ultra-Realistic Cinematic Cyberpunk City Shot"
+            class="w-full bg-slate-900/90 border border-slate-700 focus:border-violet-500 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 outline-none transition-colors"
+          />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Category *</label>
+            <select 
+              id="new-prompt-category" 
+              required
+              class="w-full bg-slate-900/90 border border-slate-700 focus:border-violet-500 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
+            >
+              <option value="Animation & Visuals">Animation & Visuals</option>
+              <option value="YouTube & Video">YouTube & Video</option>
+              <option value="Web Dev & Coding">Web Dev & Coding</option>
+              <option value="Social Media">Social Media</option>
+              <option value="Stories & Scripts">Stories & Scripts</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Target AI Tool *</label>
+            <input 
+              type="text" 
+              id="new-prompt-tool" 
+              required 
+              placeholder="e.g., ChatGPT, Midjourney, AutoDraft, Claude"
+              class="w-full bg-slate-900/90 border border-slate-700 focus:border-violet-500 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 outline-none transition-colors"
+            />
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="block text-xs font-semibold text-slate-300">Prompt Text *</label>
+            <span class="text-[10px] text-violet-400">Tip: Put variables inside [brackets]</span>
+          </div>
+          <textarea 
+            id="new-prompt-text" 
+            rows="5" 
+            required
+            placeholder="Enter the full prompt template. Use brackets for variable inputs, like [Character Name] or [Target Language]..."
+            class="w-full bg-slate-900/90 border border-slate-700 focus:border-violet-500 rounded-xl p-3.5 text-xs sm:text-sm font-mono text-white placeholder-slate-500 outline-none transition-colors leading-relaxed"
+          ></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">Tips / Optimal Settings (Optional)</label>
+          <input 
+            type="text" 
+            id="new-prompt-tips" 
+            placeholder="e.g., Use aspect ratio --ar 16:9 and stylus stylize parameter --s 250"
+            class="w-full bg-slate-900/90 border border-slate-700 focus:border-violet-500 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 outline-none transition-colors"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">Tags (Comma-separated)</label>
+          <input 
+            type="text" 
+            id="new-prompt-tags" 
+            placeholder="e.g., 3d, character, blender, cinematic"
+            class="w-full bg-slate-900/90 border border-slate-700 focus:border-violet-500 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 outline-none transition-colors"
+          />
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="pt-4 border-t border-white/10 flex items-center justify-end gap-3">
+          <button 
+            type="button" 
+            data-close-modal 
+            class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-400 hover:text-white"
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            class="px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-violet-600 hover:bg-violet-500 text-white transition-all shadow-lg shadow-violet-600/30"
+          >
+            Save Prompt
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Modal 3: AI Prompt Generator Studio -->
+  <div id="generator-modal" class="modal-container fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div class="modal-backdrop fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity"></div>
+    
+    <div class="glass-panel w-full max-w-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden relative z-10 animate-fade-in-scale max-h-[92vh] flex flex-col">
+      
+      <!-- Studio Header -->
+      <div class="p-6 border-b border-white/10 flex items-center justify-between bg-slate-900/60">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-violet-600 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-violet-500/30">
+            <i data-lucide="wand-2" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h2 class="text-lg sm:text-xl font-bold text-white">AI Prompt Generator Studio</h2>
+            <p class="text-xs text-slate-400">Craft engineered prompts for any objective</p>
+          </div>
+        </div>
+        <button data-close-modal class="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Generator Studio Form -->
+      <form id="generator-form" class="p-6 overflow-y-auto space-y-4 flex-1">
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Task Objective</label>
+            <select id="gen-type" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:border-violet-500 outline-none">
+              <option value="visual">Animation & Visual (3D/Concept)</option>
+              <option value="coding">Web Dev & Full-Stack Coding</option>
+              <option value="video">YouTube & Video Script</option>
+              <option value="social">Social Media Growth Post</option>
+              <option value="story">Creative Story & Dialogue</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Target AI Model</label>
+            <select id="gen-tool" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:border-violet-500 outline-none">
+              <option value="ChatGPT">ChatGPT (GPT-4o)</option>
+              <option value="Midjourney">Midjourney v6</option>
+              <option value="AutoDraft">AutoDraft AI</option>
+              <option value="Claude">Claude 3.5 Sonnet</option>
+              <option value="Runway">Runway Gen-3 / Sora</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">Concept / Topic / Subject</label>
+          <input 
+            type="text" 
+            id="gen-topic" 
+            required 
+            placeholder="e.g., Cyberpunk tea master brewing glowing matcha in Neo-Kyoto"
+            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:border-violet-500 outline-none"
+          />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Tone & Aesthetic Style</label>
+            <select id="gen-tone" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:border-violet-500 outline-none">
+              <option value="Hyper-realistic & Cinematic">Hyper-realistic & Cinematic</option>
+              <option value="Pixar & Stylized 3D">Pixar & Stylized 3D</option>
+              <option value="High-Converting & Engaging">High-Converting & Engaging</option>
+              <option value="Production-Ready & Clean">Production-Ready & Clean</option>
+              <option value="Mysterious & Noir">Mysterious & Noir</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Detail & Constraints Level</label>
+            <select id="gen-complexity" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:border-violet-500 outline-none">
+              <option value="Comprehensive with clear step-by-step guidance">Comprehensive & Step-by-Step</option>
+              <option value="Concise and high-impact">Concise & Punchy</option>
+              <option value="Enterprise Architecture Spec">Deep Enterprise Spec</option>
+            </select>
+          </div>
+        </div>
+
+        <button 
+          type="submit" 
+          class="w-full py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white transition-all shadow-lg shadow-violet-600/30 flex items-center justify-center gap-2"
+        >
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+          <span>Generate Structured Prompt</span>
+        </button>
+
+        <!-- Result Box (Initially Hidden) -->
+        <div id="gen-result-container" class="hidden p-4 rounded-2xl bg-[#090e1a] border border-violet-500/30 space-y-3 mt-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-violet-300 uppercase tracking-wide flex items-center gap-1.5">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i>
+              Generated Master Prompt
+            </span>
+            <span class="text-[10px] text-slate-400">Ready to test or copy</span>
+          </div>
+
+          <div id="gen-result-text" class="p-3.5 rounded-xl bg-slate-950/80 border border-white/5 font-mono text-xs text-slate-200 leading-relaxed whitespace-pre-wrap select-text max-h-48 overflow-y-auto">
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-2">
+            <button 
+              id="gen-copy-btn" 
+              type="button" 
+              class="px-4 py-2 rounded-xl text-xs font-semibold bg-violet-600 hover:bg-violet-500 text-white transition-all flex items-center gap-1.5"
+            >
+              <i data-lucide="clipboard" class="w-3.5 h-3.5"></i>
+              <span>Copy Prompt</span>
+            </button>
+            <button 
+              id="gen-save-hub-btn" 
+              type="button" 
+              class="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-all flex items-center gap-1.5"
+            >
+              <i data-lucide="bookmark" class="w-3.5 h-3.5"></i>
+              <span>Save to PromptBox</span>
+            </button>
+          </div>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ================= AUTH MODAL ================= -->
+  <div id="auth-modal" class="modal-container fixed inset-0 z-[60] hidden flex items-center justify-center p-4">
+    <div class="modal-backdrop fixed inset-0 bg-black/85 backdrop-blur-md" data-close-modal></div>
+
+    <div class="glass-panel w-full max-w-md rounded-3xl border border-white/10 shadow-2xl overflow-hidden relative z-10 animate-fade-in-scale">
+
+      <!-- Modal Header -->
+      <div class="p-6 border-b border-white/10 bg-gradient-to-r from-slate-900/80 to-violet-950/30 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
+            <i data-lucide="lock" class="w-5 h-5 text-white"></i>
+          </div>
+          <div>
+            <h2 id="auth-modal-title" class="text-lg font-bold text-white">Sign In to PromptBox</h2>
+            <p class="text-xs text-slate-400">Unlock admin tools & personalized saves</p>
+          </div>
+        </div>
+        <button data-close-modal type="button" class="p-2 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 space-y-4">
+
+        <!-- Google OAuth Button -->
+        <button id="btn-google-auth" type="button"
+          class="google-auth-btn w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-white font-semibold text-sm transition-all active:scale-95 shadow-md"
+        >
+          <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Continue with Google
+        </button>
+
+        <!-- Divider -->
+        <div class="flex items-center gap-3">
+          <div class="flex-1 h-px bg-white/10"></div>
+          <span class="text-xs text-slate-500 font-medium">or continue with email</span>
+          <div class="flex-1 h-px bg-white/10"></div>
+        </div>
+
+        <!-- Email Auth Form -->
+        <form id="auth-email-form" class="space-y-3" autocomplete="on">
+          <!-- Name Field (Sign Up only) -->
+          <div id="auth-name-field" class="hidden">
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Full Name</label>
+            <input
+              id="auth-name-input"
+              type="text"
+              placeholder="Your name"
+              autocomplete="name"
+              class="w-full bg-slate-900/80 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 outline-none transition-all"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Email Address</label>
+            <input
+              id="auth-email-input"
+              type="email"
+              placeholder="you@example.com"
+              autocomplete="email"
+              required
+              class="w-full bg-slate-900/80 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 outline-none transition-all"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Password</label>
+            <div class="relative">
+              <input
+                id="auth-password-input"
+                type="password"
+                placeholder="Min 6 characters"
+                autocomplete="current-password"
+                required
+                class="w-full bg-slate-900/80 border border-slate-700/80 rounded-xl px-4 py-2.5 pr-10 text-sm text-white placeholder-slate-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 outline-none transition-all"
+              />
+              <button type="button" id="auth-toggle-password" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200 transition-colors">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Error Message -->
+          <div id="auth-error-msg" class="hidden text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 flex items-center gap-2">
+            <i data-lucide="alert-circle" class="w-3.5 h-3.5 shrink-0"></i>
+            <span id="auth-error-text">Something went wrong.</span>
+          </div>
+
+          <!-- Submit Button -->
+          <button
+            id="auth-submit-btn"
+            type="submit"
+            class="w-full py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-lg shadow-violet-600/30 active:scale-95 transition-all flex items-center justify-center gap-2"
+          >
+            <i data-lucide="log-in" class="w-4 h-4"></i>
+            <span id="auth-submit-label">Sign In</span>
+          </button>
+        </form>
+
+        <!-- Toggle Sign In / Sign Up -->
+        <p class="text-center text-xs text-slate-500">
+          <span id="auth-toggle-text">Don't have an account?</span>
+          <button id="auth-mode-toggle" type="button" class="ml-1 text-violet-400 hover:text-violet-300 font-semibold underline-offset-2 hover:underline transition-colors">Sign Up</button>
+        </p>
+
+      </div>
+    </div>
+  </div>
+  <!-- ================= /AUTH MODAL ================= -->
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Application Script -->
+  <script src="app.js"></script>
+</body>
+</html>
